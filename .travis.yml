@@ -1,0 +1,20 @@
+language: go
+
+services:
+- docker
+
+jobs:
+  include:
+  - stage: build
+    script: make container-run/all
+
+deploy:
+  - provider: script
+    script: make container-image/push
+    on:
+      tags: true
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
