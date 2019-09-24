@@ -1,4 +1,4 @@
-module github.com/volker-raschek/dhd
+module github.com/volker-raschek/docker-hub-description-updater
 
 go 1.13
 

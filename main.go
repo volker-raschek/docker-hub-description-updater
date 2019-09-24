@@ -7,8 +7,8 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/go-flucky/flucky/pkg/logger"
-	"github.com/volker-raschek/dhd/pkg/hub"
-	"github.com/volker-raschek/dhd/pkg/types"
+	"github.com/volker-raschek/docker-hub-description-updater/pkg/hub"
+	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
 )
 
 var (

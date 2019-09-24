@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-flucky/flucky/pkg/logger"
-	"github.com/volker-raschek/dhd/pkg/types"
+	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
 )
 
 var (
