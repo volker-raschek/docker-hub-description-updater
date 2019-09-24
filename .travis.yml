@@ -5,14 +5,15 @@ services:
 
 jobs:
   include:
-  - stage: build
+  - name: build-binaries
+    stage: build
     script: make container-run/all
-
-deploy:
-  - provider: script
+  - name: deploy-container-image-latest
+    stage: deploy
     script: make container-image/push
-    on:
-      tags: true
+  - name: deploy-container-image-tagged
+    stage: deploy
+    script: make container-image/push VERSION=${TRAVIS_TAG} CONTAINER_IMAGE_VERSION=${TRAVIS_TAG}
 
 notifications:
   email:
