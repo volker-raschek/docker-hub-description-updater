@@ -1,21 +1,27 @@
-language: go
-
 services:
 - docker
 
+stages:
+- build
+# - test
+- deploy
+
 jobs:
   include:
-  - name: build-binaries
+  - name: "Compile golang binaries inside a container image"
     stage: build
     script: make container-run/all
-  - name: deploy-container-image-latest
+  # - name: "Test golang binaries inside a container image"
+  #   stage: test
+  #   script: make container-run/test
+  - name: "Deploy container-image tagged as latest"
     stage: deploy
     script: make container-image/push
-  - name: deploy-container-image-tagged
-    stage: deploy
-    script: make container-image/push VERSION=${TRAVIS_TAG} CONTAINER_IMAGE_VERSION=${TRAVIS_TAG}
-    on:
-      tags: true
+  # - name: "Deploy container-image tagged with a git tag"
+  #   stage: deploy
+  #   script: make container-image/push VERSION=${TRAVIS_TAG} CONTAINER_IMAGE_VERSION=${TRAVIS_TAG}
+  #   on:
+  #     tags: true
 
 notifications:
   email:
