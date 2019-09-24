@@ -119,6 +119,7 @@ container-image/build:
 	fi
 
 container-image/push: container-image/build
+	${CONTAINER_RUNTIME} login ${REGISTRY_MIRROR} --username ${REGISTRY_USER} --password ${REGISTRY_PASSWORD}
 	${CONTAINER_RUNTIME} push ${REGISTRY_MIRROR}/${REGISTRY_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION}
 
 # CONTAINER STEPS - BINARY
