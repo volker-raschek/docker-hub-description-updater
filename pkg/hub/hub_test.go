@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	flogger "github.com/go-flucky/flucky/pkg/logger"
 	"github.com/stretchr/testify/require"
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/hub"
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
+	flogger "github.com/volker-raschek/go-logger/pkg/logger"
 )
 
 func TestPatchRepository(t *testing.T) {

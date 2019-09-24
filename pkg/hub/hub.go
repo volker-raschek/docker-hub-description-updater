@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-flucky/flucky/pkg/logger"
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
+	"github.com/volker-raschek/go-logger/pkg/logger"
 )
 
 var (
