@@ -47,15 +47,15 @@ BUILD_IMAGE:=volkerraschek/build-image:latest
 # on or pull from container images. The REGISTRY_NAMESPACE defines the Namespace
 # where the CONTAINER_RUNTIME will be search for container images or push them
 # onto. The most time it's the same as REGISTRY_USER.
+REGISTRY_USER:=volkerraschek
 REGISTRY_MIRROR=docker.io
 REGISTRY_NAMESPACE:=${REGISTRY_USER}
-REGISTRY_USER:=volkerraschek
+
 
 # CONTAINER_IMAGE_VERSION / CONTAINER_IMAGE_NAME / CONTAINER_IMAGE
 # Defines the name of the new container to be built using several variables.
 CONTAINER_IMAGE_NAME=${EXECUTABLE}
 CONTAINER_IMAGE_VERSION?=latest
-CONTAINER_IMAGE=${REGISTRY_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION}
 
 README_FILE:=README.md
 
