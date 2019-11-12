@@ -5,24 +5,21 @@
 [![GoDoc Reference](https://godoc.org/github.com/volker-raschek/docker-hub-description-updater?status.svg)](http://godoc.org/github.com/volker-raschek/docker-hub-description-updater)
 [![Docker Pulls](https://img.shields.io/docker/pulls/volkerraschek/dhdu)](https://hub.docker.com/r/volkerraschek/dhdu)
 
-By specifying the login data for hub.docker.com you can update the short and
-long description of a docker repository.
+By specifying the login data for [hub.docker.com](https://hub.docker.com) you
+can update the short and long description of a docker repository.
 
 ## Usage
 
-Several options are available to update the descriptions. Either based on
-Markdown files or as a normal string, which is passed as argument when calling.
-The examples below describe two ways, the binary and container based way.
-
-### Example 1: Update full description of the repository with a Markdown file
+The examples below describe two ways to update the full description of the
+docker hub repository. First by the binary and second by a container based way.
 
 ```bash
 dhdu \
-  -user=<username> \
-  -password=<password> \
-  -namespace=<namespace> \
-  -repository=<repository> \
-  -full-description-file=./README.md
+  --user=<username> \
+  --password=<password> \
+  --namespace=<namespace> \
+  --repository=<repository> \
+  --file=./README.md
 ```
 
 ```bash
@@ -30,33 +27,11 @@ docker run \
   --rm \
   --volume $(pwd):/workspace \
     volkerraschek/dhdu \
-      -user=<username> \
-      -password=<password> \
-      -namespace=<namespace> \
-      -repository=<repository> \
-      -full-description-file=./README.md
-```
-
-### Example 2: Update full description of the repository over an argument
-
-```bash
-dhdu -user=<username> \
-     -password=<password> \
-     -namespace=<namespace> \
-     -repository=<repository> \
-     -full-description="My awesome description"
-```
-
-```bash
-docker run \
-  --rm \
-  --volume $(pwd):/workspace \
-    volkerraschek/dhdu \
-      -user=<username> \
-      -password=<password> \
-      -namespace=<namespace> \
-      -repository=<repository> \
-      -full-description="My awesome description"
+      --user=<username> \
+      --password=<password> \
+      --namespace=<namespace> \
+      --repository=<repository> \
+      --file=./README.md
 ```
 
 ## Compiling the source code
