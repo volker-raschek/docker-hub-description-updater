@@ -10,9 +10,9 @@ EXECUTABLE:=dhdu
 
 # LINUX_EXECUTABLES AND TARGETS
 LINUX_EXECUTABLES:=\
-	linux/amd64/$(EXECUTABLE) \
-	linux/arm/5/$(EXECUTABLE) \
-	linux/arm/7/$(EXECUTABLE)
+	linux/amd64/${EXECUTABLE} \
+	linux/arm/5/${EXECUTABLE} \
+	linux/arm/7/${EXECUTABLE}
 
 LINUX_EXECUTABLE_TARGETS:=${LINUX_EXECUTABLES:%=bin/%}
 
@@ -50,11 +50,12 @@ REGISTRY_USER:=volkerraschek
 REGISTRY_MIRROR=docker.io
 REGISTRY_NAMESPACE:=${REGISTRY_USER}
 
-
 # CONTAINER_IMAGE_VERSION / CONTAINER_IMAGE_NAME / CONTAINER_IMAGE
 # Defines the name of the new container to be built using several variables.
+BASE_IMAGE=busybox:latest
 CONTAINER_IMAGE_NAME=${EXECUTABLE}
 CONTAINER_IMAGE_VERSION?=latest
+CONTAINER_IMAGE=${REGISTRY_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION}
 
 README_FILE:=README.md
 
@@ -66,17 +67,17 @@ ${EXECUTABLE}: bin/tmp/${EXECUTABLE}
 
 all: ${EXECUTABLE_TARGETS}
 
-bin/linux/amd64/$(EXECUTABLE): bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "${@}"
+bin/linux/amd64/${EXECUTABLE}: bindata
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
-bin/linux/arm/5/$(EXECUTABLE): bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "${@}"
+bin/linux/arm/5/${EXECUTABLE}: bindata
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
-bin/linux/arm/7/$(EXECUTABLE): bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "${@}"
+bin/linux/arm/7/${EXECUTABLE}: bindata
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 bin/tmp/${EXECUTABLE}: bindata
-	go build -ldflags "-X main.version=${VERSION}" -o "${@}"
+	go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 # BINDATA
 # ==============================================================================
@@ -112,8 +113,14 @@ clean:
 # ==============================================================================
 container-image/build:
 	${CONTAINER_RUNTIME} build \
-		--tag ${REGISTRY_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION} \
-		--tag ${REGISTRY_MIRROR}/${REGISTRY_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION} \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
+		--build-arg BUILD_IMAGE=${BUILD_IMAGE} \
+		--build-arg EXECUTABLE_TARGET=bin/linux/amd64/${EXECUTABLE} \
+		--build-arg GOPROXY=${GOPROXY} \
+		--build-arg VERSION=${VERSION} \
+		--no-cache \
+		--tag ${CONTAINER_IMAGE} \
+		--tag ${REGISTRY_MIRROR}/${CONTAINER_IMAGE} \
 		.
 
 	if [ -f $(shell which docker) ] && [ "${CONTAINER_RUNTIME}" == "$(shell which podman)" ]; then \
@@ -122,7 +129,7 @@ container-image/build:
 
 container-image/push: container-image/build
 	${CONTAINER_RUNTIME} login ${REGISTRY_MIRROR} --username ${REGISTRY_USER} --password ${REGISTRY_PASSWORD}
-	${CONTAINER_RUNTIME} push ${REGISTRY_MIRROR}/${REGISTRY_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION}
+	${CONTAINER_RUNTIME} push ${REGISTRY_MIRROR}/${CONTAINER_IMAGE}
 
 # CONTAINER STEPS - BINARY
 # ==============================================================================

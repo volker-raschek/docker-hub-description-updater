@@ -1,9 +1,19 @@
-FROM volkerraschek/build-image:1.4.0 AS build-env
+ARG BASE_IMAGE
+ARG BUILD_IMAGE
+ARG EXECUTABLE_TARGET
+ARG VERSION
+
+# BUILD
+# ==============================================================================
+FROM ${BUILD_IMAGE} AS build-env
 
 ADD ./ /workspace
 
-RUN make bin/linux/amd64/dhdu
+RUN make clean ${EXECUTABLE_TARGET} GOPROXY=${GOPROXY}
 
-FROM busybox:latest
-COPY --from=build-env /workspace/bin/linux/amd64/dhdu /usr/bin/dhdu
+# TARGET
+# ==============================================================================
+FROM ${BASE_IMAGE}
+COPY --from=build-env /workspace/${EXECUTABLE_TARGET} /usr/bin/dhdu
+RUN chmod +x /usr/bin/dhdu
 ENTRYPOINT [ "/usr/bin/dhdu" ]
