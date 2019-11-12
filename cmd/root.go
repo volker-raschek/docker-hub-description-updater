@@ -44,6 +44,7 @@ var rootCmd = &cobra.Command{
 			flogger = logger.NewDefaultLogger(logger.LogLevelDebug)
 			break
 		}
+		hub.SetLogger(flogger)
 
 		if len(dockerHubUser) <= 0 {
 			flogger.Fatal("No user defined over flags")
