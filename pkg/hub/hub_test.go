@@ -56,5 +56,5 @@ func TestPatchRepository(t *testing.T) {
 	require.NoError(err)
 
 	require.NotEqual(currentRepository, actualRepository, "The repository properties have remained the same even though an update was performed")
-	require.Equal(&expectedRepository, actualRepository, "The update was successfully")
+	require.EqualValues(&expectedRepository, actualRepository, "The update was successfully")
 }

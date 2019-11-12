@@ -121,35 +121,30 @@ func PatchRepository(repository *types.Repository, token *types.Token) (*types.R
 		return nil, errorNoRepositoryDefined
 	}
 
-	repositoryBuffer := new(bytes.Buffer)
-	jsonEncoder := json.NewEncoder(repositoryBuffer)
-	if err := jsonEncoder.Encode(repository); err != nil {
-		return nil, fmt.Errorf("Can not encode JSON from Repository struct: %v", err)
-	}
+	// repositoryBuffer := new(bytes.Buffer)
+	// jsonEncoder := json.NewEncoder(repositoryBuffer)
+	// if err := jsonEncoder.Encode(repository); err != nil {
+	// 	return nil, fmt.Errorf("Can not encode JSON from Repository struct: %v", err)
+	// }
 
 	client := new(http.Client)
 
-	// patchURL, err := url.Parse(fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, repository.Namespcace, repository.Name))
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Can not prase URL: %v", err)
-	// }
-
-	patchURL := "https://httpbin.org/patch"
+	patchURL, err := url.Parse(fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, repository.Namespcace, repository.Name))
+	if err != nil {
+		return nil, fmt.Errorf("Can not prase URL: %v", err)
+	}
 
 	data := url.Values{}
 	data.Set("full_description", repository.FullDescription)
 
-	req, err := http.NewRequest(http.MethodPatch, patchURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest(http.MethodPatch, patchURL.String(), strings.NewReader(data.Encode()))
 	if err != nil {
-		return nil, fmt.Errorf("Can not create request to update readme: %v", err)
+		return nil, fmt.Errorf("Can not create http request to update file: %v", err)
 	}
-	req.Header.Add("Accept", "*/*")
 	req.Header.Add("Authorization", fmt.Sprintf("JWT %v", token.Token))
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	//req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
-	req.Header.Del("Accept-Encoding")
-
-	flogger.Debug("Content-Length", strconv.Itoa(len(data.Encode())))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -157,17 +152,15 @@ func PatchRepository(repository *types.Repository, token *types.Token) (*types.R
 	}
 	defer resp.Body.Close()
 
-	flogger.Debug("Get Statuscode: %v", resp.StatusCode)
-
-	if resp.StatusCode == 200 {
+	if resp.StatusCode != 200 {
 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-		//return nil, fmt.Errorf("Invalid HTTP-Statuscode: Get %v but expect 200: %v", resp.StatusCode, string(bodyBytes))
-		flogger.Debug("RESP_BODY: %v", string(bodyBytes))
+		return nil, fmt.Errorf("Invalid HTTP-Statuscode: Get %v but expect 200: %v", resp.StatusCode, string(bodyBytes))
 	}
 
 	patchedRepository := new(types.Repository)
 
-	if err := json.NewDecoder(resp.Body).Decode(patchedRepository); err != nil {
+	jsonDecoder := json.NewDecoder(resp.Body)
+	if err := jsonDecoder.Decode(patchedRepository); err != nil {
 		return nil, fmt.Errorf("Can not encode JSON from Repository struct: %v", err)
 	}
 
