@@ -2,8 +2,7 @@
 # If no version is specified as a parameter of make, the last git hash
 # value is taken.
 # VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
-VERSION?=$(shell git rev-parse --short HEAD)
-RELEASE?=1
+VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
 
 # EXECUTABLE
 # Executable binary which should be compiled for different architecures
@@ -62,19 +61,22 @@ README_FILE:=README.md
 # BINARIES
 # ==============================================================================
 PHONY:=all
+
+${EXECUTABLE}: bin/tmp/${EXECUTABLE}
+
 all: ${EXECUTABLE_TARGETS}
 
 bin/linux/amd64/$(EXECUTABLE): bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "$@"
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "${@}"
 
 bin/linux/arm/5/$(EXECUTABLE): bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "$@"
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "${@}"
 
 bin/linux/arm/7/$(EXECUTABLE): bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "$@"
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o "${@}"
 
 bin/tmp/${EXECUTABLE}: bindata
-	go build -ldflags "-X main.version=${VERSION}" -o "$@"
+	go build -ldflags "-X main.version=${VERSION}" -o "${@}"
 
 # BINDATA
 # ==============================================================================
