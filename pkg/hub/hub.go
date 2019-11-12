@@ -11,17 +11,11 @@ import (
 	"strings"
 
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
-	"github.com/volker-raschek/go-logger/pkg/logger"
 )
 
 var (
 	dockerHubAPI = "https://hub.docker.com/v2"
-	flogger      logger.Logger
 )
-
-func init() {
-	flogger = logger.NewSilentLogger()
-}
 
 func GetRepository(namespace string, name string, token *types.Token) (*types.Repository, error) {
 
@@ -165,8 +159,4 @@ func PatchRepository(repository *types.Repository, token *types.Token) (*types.R
 	}
 
 	return patchedRepository, nil
-}
-
-func SetLogger(l logger.Logger) {
-	flogger = l
 }
