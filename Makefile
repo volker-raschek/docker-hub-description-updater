@@ -78,10 +78,10 @@ bin/linux/amd64/${EXECUTABLE}: bindata
 	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 bin/linux/arm/5/${EXECUTABLE}: bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
+	CGO_ENABLED=0 GOARM=5 GOARCH=arm GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 bin/linux/arm/7/${EXECUTABLE}: bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
+	CGO_ENABLED=0 GOARM=7 GOARCH=arm GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 bin/tmp/${EXECUTABLE}: bindata
 	go build -ldflags "-X main.version=${VERSION}" -o ${@}
