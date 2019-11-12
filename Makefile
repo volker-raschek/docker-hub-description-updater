@@ -4,6 +4,13 @@
 # VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
 VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
 
+# GO SETTINGS
+# Defines a proxy server to download dependent libraries. If no proxy is
+# defined, "direct" is used. See configuration options:
+# - https://golang.org/cmd/go/#hdr-Module_downloading_and_verification
+# - go help module-private
+GOPROXY?=direct
+
 # EXECUTABLE
 # Executable binary which should be compiled for different architecures
 EXECUTABLE:=dhdu
