@@ -156,7 +156,8 @@ container-run:
 		--volume ${PWD}:/workspace \
 		${BUILD_IMAGE} \
 			make ${COMMAND} \
-				VERSION=${VERSION}
+				VERSION=${VERSION} \
+				GOPROXY=${GOPROXY}
 
 # PHONY
 # ==============================================================================
