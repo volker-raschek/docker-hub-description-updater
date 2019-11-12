@@ -1,4 +1,4 @@
-# VERSION/RELEASE
+# VERSION
 # If no version is specified as a parameter of make, the last git hash
 # value is taken.
 # VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
@@ -156,8 +156,7 @@ container-run:
 		--volume ${PWD}:/workspace \
 		${BUILD_IMAGE} \
 			make ${COMMAND} \
-				VERSION=${VERSION} \
-				RELEASE=${RELEASE}
+				VERSION=${VERSION}
 
 # PHONY
 # ==============================================================================
