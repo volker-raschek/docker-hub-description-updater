@@ -7,12 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/hub"
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
-	flogger "github.com/volker-raschek/go-logger/pkg/logger"
 )
 
 func TestPatchRepository(t *testing.T) {
-
-	hub.SetLogger(flogger.NewDefaultLogger(flogger.LogLevelDebug))
 
 	dockerHubUser := os.Getenv("REGISTRY_USER")
 	if len(dockerHubUser) <= 0 {

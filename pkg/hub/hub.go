@@ -135,10 +135,15 @@ func PatchRepository(repository *types.Repository, token *types.Token) (*types.R
 	if err != nil {
 		return nil, fmt.Errorf("Can not create http request to update file: %v", err)
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("JWT %v", token.Token))
+
+	// Disable gzip compression:
+	// - https://stackoverflow.com/questions/33469723/go-how-to-control-gzip-compression-when-sending-http-request
+	req.Header.Set("Accept-Encoding", "identity")
+
+	req.Header.Set("Authorization", fmt.Sprintf("JWT %v", token.Token))
+	req.Header.Set("Content-Length", strconv.Itoa(len(data.Encode())))
 	//req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := client.Do(req)
 	if err != nil {
