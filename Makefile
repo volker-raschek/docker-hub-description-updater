@@ -4,12 +4,13 @@
 # VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
 VERSION?=0.0.0+hash.$(shell git rev-parse --short HEAD)
 
-# GO SETTINGS
-# Defines a proxy server to download dependent libraries. If no proxy is
-# defined, "direct" is used. See configuration options:
-# - https://golang.org/cmd/go/#hdr-Module_downloading_and_verification
-# - go help module-private
-GOPROXY?=direct
+# GOPROXY settings
+# If no GOPROXY environment variable available, the pre-defined GOPROXY from go
+# env to download and validate go modules is used. Exclude downloading and
+# validation of all private modules which are pre-defined in GOPRIVATE. If no
+# GOPRIVATE variable defined, the variable of go env is used.
+GOPROXY?=$(shell go env GOPROXY)
+GOPRIVATE?=$(shell go env GOPRIVATE)
 
 # EXECUTABLE
 # Executable binary which should be compiled for different architecures
@@ -39,30 +40,38 @@ EXECUTABLES:=\
 EXECUTABLE_TARGETS:=\
 	${UNIX_EXECUTABLE_TARGETS}
 
-# CONTAINER_RUNTIME / BUILD_IMAGE
+# CONTAINER_RUNTIME
 # The CONTAINER_RUNTIME variable will be used to specified the path to a
-# container runtime. This is needed to start and run a container image defined
-# by the BUILD_IMAGE variable. The BUILD_IMAGE container serve as build
-# environment to execute the different make steps inside. Therefore, the bulid
-# environment requires all necessary dependancies to build this project.
+# container runtime. This is needed to start and run a container images.
 CONTAINER_RUNTIME?=$(shell which docker)
-BUILD_IMAGE:=volkerraschek/build-image:latest
 
-# REGISTRY_MIRROR / REGISTRY_NAMESPACE
-# The REGISTRY_MIRROR variable contains the name of the registry server to push
-# on or pull from container images. The REGISTRY_NAMESPACE defines the Namespace
-# where the CONTAINER_RUNTIME will be search for container images or push them
-# onto. The most time it's the same as REGISTRY_USER.
-REGISTRY_USER:=volkerraschek
-REGISTRY_MIRROR=docker.io
-REGISTRY_NAMESPACE:=${REGISTRY_USER}
+# BUILD_IMAGE
+# Definition of the container build image, in which the Binary are compiled from
+# source code
+BUILD_IMAGE_REGISTRY:=docker.io
+BUILD_IMAGE_NAMESPACE:=volkerraschek
+BUILD_IMAGE_NAME:=build-image
+BUILD_IMAGE_VERSION:=latest
+BUILD_IMAGE_FULL=${BUILD_IMAGE_REGISTRY}/${BUILD_IMAGE_NAMESPACE}/${BUILD_IMAGE_NAME}:${BUILD_IMAGE_VERSION:v%=%}
+BUILD_IMAGE_SHORT=${BUILD_IMAGE_NAMESPACE}/${BUILD_IMAGE_NAME}:${BUILD_IMAGE_VERSION:v%=%}
 
-# CONTAINER_IMAGE_VERSION / CONTAINER_IMAGE_NAME / CONTAINER_IMAGE
-# Defines the name of the new container to be built using several variables.
-BASE_IMAGE=busybox:latest
-CONTAINER_IMAGE_NAME=${EXECUTABLE}
-CONTAINER_IMAGE_VERSION?=latest
-CONTAINER_IMAGE=${REGISTRY_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION}
+# BASE_IMAGE
+# Definition of the base container image
+BASE_IMAGE_REGISTRY:=docker.io
+BASE_IMAGE_NAMESPACE:=library
+BASE_IMAGE_NAME:=alpine
+BASE_IMAGE_VERSION:=3.11.2
+BASE_IMAGE_FULL=${BASE_IMAGE_REGISTRY}/${BASE_IMAGE_NAMESPACE}/${BASE_IMAGE_NAME}:${BASE_IMAGE_VERSION:v%=%}
+BASE_IMAGE_SHORT=${BASE_IMAGE_NAMESPACE}/${BASE_IMAGE_NAME}:${BASE_IMAGE_VERSION:v%=%}
+
+# CONTAINER_IMAGE
+# Definition of the container image
+CONTAINER_IMAGE_REGISTRY:=docker.io
+CONTAINER_IMAGE_NAMESPACE:=volkerraschek
+CONTAINER_IMAGE_NAME:=${EXECUTABLE}
+CONTAINER_IMAGE_VERSION:=latest
+CONTAINER_IMAGE_FULL=${CONTAINER_IMAGE_REGISTRY}/${CONTAINER_IMAGE_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION:v%=%}
+CONTAINER_IMAGE_SHORT=${CONTAINER_IMAGE_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION:v%=%}
 
 README_FILE:=README.md
 
@@ -75,15 +84,34 @@ ${EXECUTABLE}: bin/tmp/${EXECUTABLE}
 all: ${EXECUTABLE_TARGETS}
 
 bin/linux/amd64/${EXECUTABLE}: bindata
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
+	CGO_ENABLED=0 \
+  GOOS=linux \
+  GOARCH=amd64 \
+  GOPROXY=${GOPROXY} \
+  GOPRIVATE=${GOPRIVATE} \
+	go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 bin/linux/arm/5/${EXECUTABLE}: bindata
-	CGO_ENABLED=0 GOARM=5 GOARCH=arm GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
+	CGO_ENABLED=0 \
+  GOOS=linux \
+  GOARCH=arm \
+  GOARM=5 \
+  GOPROXY=${GOPROXY} \
+  GOPRIVATE=${GOPRIVATE} \
+	go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 bin/linux/arm/7/${EXECUTABLE}: bindata
-	CGO_ENABLED=0 GOARM=7 GOARCH=arm GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o ${@}
+	CGO_ENABLED=0 \
+  GOOS=linux \
+  GOARCH=arm \
+  GOARM=5 \
+  GOPROXY=${GOPROXY} \
+  GOPRIVATE=${GOPRIVATE} \
+	go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 bin/tmp/${EXECUTABLE}: bindata
+	GOPROXY=${GOPROXY} \
+	GOPRIVATE=${GOPRIVATE} \
 	go build -ldflags "-X main.version=${VERSION}" -o ${@}
 
 # BINDATA
@@ -118,25 +146,28 @@ clean:
 
 # CONTAINER IMAGE STEPS
 # ==============================================================================
-container-image/build:
+PHONY+=container-image/build/amd64
+container-image/build/amd64:
 	${CONTAINER_RUNTIME} build \
-		--build-arg BASE_IMAGE=${BASE_IMAGE} \
-		--build-arg BUILD_IMAGE=${BUILD_IMAGE} \
+		--build-arg BASE_IMAGE=${BASE_IMAGE_FULL} \
+		--build-arg BUILD_IMAGE=${BUILD_IMAGE_FULL} \
+		--build-arg EXECUTABLE=${EXECUTABLE} \
 		--build-arg EXECUTABLE_TARGET=bin/linux/amd64/${EXECUTABLE} \
 		--build-arg GOPROXY=${GOPROXY} \
+		--build-arg GOPRIVATE=${GOPRIVATE} \
 		--build-arg VERSION=${VERSION} \
+		--file Dockerfile \
 		--no-cache \
-		--tag ${CONTAINER_IMAGE} \
-		--tag ${REGISTRY_MIRROR}/${CONTAINER_IMAGE} \
+		--tag ${CONTAINER_IMAGE_FULL} \
+		--tag ${CONTAINER_IMAGE_SHORT} \
 		.
 
-	if [ -f $(shell which docker) ] && [ "${CONTAINER_RUNTIME}" == "$(shell which podman)" ]; then \
-		podman push ${REGISTRY_MIRROR}/${CONTAINER_IMAGE} docker-daemon:${CONTAINER_IMAGE}; \
-	fi
-
-container-image/push: container-image/build
-	${CONTAINER_RUNTIME} login ${REGISTRY_MIRROR} --username ${REGISTRY_USER} --password ${REGISTRY_PASSWORD}
-	${CONTAINER_RUNTIME} push ${REGISTRY_MIRROR}/${CONTAINER_IMAGE}
+PHONY+=container-image/push/amd64
+container-image/push/amd64: container-image/build/amd64
+	${CONTAINER_RUNTIME} login ${CONTAINER_IMAGE_REGISTRY} \
+		--username ${CONTAINER_IMAGE_REGISTRY_USER} \
+		--password ${CONTAINER_IMAGE_REGISTRY_PASSWORD}
+	${CONTAINER_RUNTIME} push ${CONTAINER_IMAGE_FULL}
 
 # CONTAINER STEPS - BINARY
 # ==============================================================================
@@ -161,10 +192,11 @@ container-run:
 	${CONTAINER_RUNTIME} run \
 		--rm \
 		--volume ${PWD}:/workspace \
-		${BUILD_IMAGE} \
+		${BUILD_IMAGE_FULL} \
 			make ${COMMAND} \
 				VERSION=${VERSION} \
-				GOPROXY=${GOPROXY}
+				GOPROXY=${GOPROXY} \
+				GOPRIVATE=${GOPRIVATE} \
 
 # PHONY
 # ==============================================================================
