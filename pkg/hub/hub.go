@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
+	"time"
 
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
 )
@@ -17,7 +15,14 @@ var (
 	dockerHubAPI = "https://hub.docker.com/v2"
 )
 
-func GetRepository(namespace string, name string, token *types.Token) (*types.Repository, error) {
+type Hub struct {
+	client      *http.Client
+	credentials *types.LoginCredentials
+	token       *types.Token
+}
+
+// GetRepository returns a repository struct
+func (h *Hub) GetRepository(namespace string, name string) (*types.Repository, error) {
 
 	if len(namespace) <= 0 {
 		return nil, errorNoNamespaceDefined
@@ -27,85 +32,80 @@ func GetRepository(namespace string, name string, token *types.Token) (*types.Re
 		return nil, errorNoRepositoryDefined
 	}
 
-	client := new(http.Client)
-
-	url, err := url.Parse(fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, namespace, name))
+	rawURL := fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, namespace, name)
+	url, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("Can not prase URL: %v", err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToParseURL, err)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("Can not create request to get repository: %v", err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
 	}
 
-	if token != nil {
-		req.Header.Add("Authorization", fmt.Sprintf("JWT %v", token.Token))
+	if h.token == nil {
+		token, err := h.getToken()
+		if err != nil {
+			return nil, err
+		}
+		h.token = token
 	}
+	req.Header.Add("Authorization", fmt.Sprintf("JWT %v", h.token.Token))
 
-	resp, err := client.Do(req)
+	resp, err := h.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("An error has occured: %v", err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToSendRequest, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Invalid HTTP-Statuscode: Get %v but expect 200", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
 	}
 
 	repository := new(types.Repository)
 	jsonDecoder := json.NewDecoder(resp.Body)
 	if err := jsonDecoder.Decode(repository); err != nil {
-		return nil, fmt.Errorf("Can not encode JSON from Repository struct: %v", err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
 	}
 
 	return repository, nil
 }
 
-func GetToken(loginCredentials *types.LoginCredentials) (*types.Token, error) {
-
-	if len(loginCredentials.User) <= 0 {
-		return nil, errorNoUserDefined
-	}
-
-	if len(loginCredentials.Password) <= 0 {
-		return nil, errorNoPasswordDefined
-	}
-
-	client := new(http.Client)
-
+func (h *Hub) getToken() (*types.Token, error) {
 	loginBuffer := new(bytes.Buffer)
 	jsonEncoder := json.NewEncoder(loginBuffer)
-	if err := jsonEncoder.Encode(loginCredentials); err != nil {
-		return nil, fmt.Errorf("Can not encode JSON from LoginCredential struct: %v", err)
+	if err := jsonEncoder.Encode(h.credentials); err != nil {
+		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%v/users/login/", dockerHubAPI), loginBuffer)
+	rawURL := fmt.Sprintf("%v/users/login/", dockerHubAPI)
+	req, err := http.NewRequest(http.MethodPost, rawURL, loginBuffer)
 	if err != nil {
-		return nil, fmt.Errorf("Can not create request to get token from %v: %v", dockerHubAPI, err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := h.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("An error has occured after sending the http request to get a JWT token from %v: %v", dockerHubAPI, err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Invalid HTTP-Statuscode while getting the JWT Token: Get %v but expect 200", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
 	}
 
 	token := new(types.Token)
 	jsonDecoder := json.NewDecoder(resp.Body)
 	if err := jsonDecoder.Decode(token); err != nil {
-		return nil, fmt.Errorf("Can not decode token: %v", err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
 	}
 
 	return token, nil
 }
 
-func PatchRepository(repository *types.Repository, token *types.Token) (*types.Repository, error) {
+// PatchRepository updates the docker hub repository
+func (h *Hub) PatchRepository(repository *types.Repository) (*types.Repository, error) {
 
 	if len(repository.Namespcace) <= 0 {
 		return nil, errorNoNamespaceDefined
@@ -115,53 +115,55 @@ func PatchRepository(repository *types.Repository, token *types.Token) (*types.R
 		return nil, errorNoRepositoryDefined
 	}
 
-	// repositoryBuffer := new(bytes.Buffer)
-	// jsonEncoder := json.NewEncoder(repositoryBuffer)
-	// if err := jsonEncoder.Encode(repository); err != nil {
-	// 	return nil, fmt.Errorf("Can not encode JSON from Repository struct: %v", err)
-	// }
+	if h.token == nil {
+		token, err := h.getToken()
+		if err != nil {
+			return nil, err
+		}
+		h.token = token
 
-	client := new(http.Client)
-
-	patchURL, err := url.Parse(fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, repository.Namespcace, repository.Name))
-	if err != nil {
-		return nil, fmt.Errorf("Can not prase URL: %v", err)
 	}
 
-	data := url.Values{}
+	rawURL := fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, repository.Namespcace, repository.Name)
+	patchURL, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("%v: %v", errorFailedToParseURL, err)
+	}
+
+	data := &url.Values{}
 	data.Set("full_description", repository.FullDescription)
+	patchURL.RawQuery = data.Encode()
 
-	req, err := http.NewRequest(http.MethodPatch, patchURL.String(), strings.NewReader(data.Encode()))
+	req, err := http.NewRequest(http.MethodPatch, patchURL.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("Can not create http request to update file: %v", err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("JWT %v", h.token.Token))
 
-	// Disable gzip compression:
-	// - https://stackoverflow.com/questions/33469723/go-how-to-control-gzip-compression-when-sending-http-request
-	req.Header.Set("Accept-Encoding", "identity")
-
-	req.Header.Set("Authorization", fmt.Sprintf("JWT %v", token.Token))
-	req.Header.Set("Content-Length", strconv.Itoa(len(data.Encode())))
-	//req.Header.Add("Content-Type", "application/json")
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := client.Do(req)
+	resp, err := h.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("An error has occured: %v", err)
+		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Invalid HTTP-Statuscode: Get %v but expect 200: %v", resp.StatusCode, string(bodyBytes))
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
 	}
 
 	patchedRepository := new(types.Repository)
-
 	jsonDecoder := json.NewDecoder(resp.Body)
-	if err := jsonDecoder.Decode(patchedRepository); err != nil {
-		return nil, fmt.Errorf("Can not encode JSON from Repository struct: %v", err)
+	if err := jsonDecoder.Decode(h.token); err != nil {
+		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
 	}
 
 	return patchedRepository, nil
+}
+
+func New(credentials *types.LoginCredentials) *Hub {
+	return &Hub{
+		client: &http.Client{
+			Timeout: time.Second * 15,
+		},
+		credentials: credentials,
+	}
 }

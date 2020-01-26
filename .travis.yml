@@ -14,14 +14,15 @@ jobs:
   # - name: "Test golang binaries inside a container image"
   #   stage: test
   #   script: make container-run/test
+  #   after_script: bash <(curl -s https://codecov.io/bash)
   - name: "Deploy container-image tagged as latest"
     stage: deploy
     script: make container-image/push
-  # - name: "Deploy container-image tagged with a git tag"
-  #   stage: deploy
-  #   script: make container-image/push VERSION=${TRAVIS_TAG} CONTAINER_IMAGE_VERSION=${TRAVIS_TAG}
-  #   on:
-  #     tags: true
+  - name: "Deploy container-image tagged with a git tag"
+    stage: deploy
+    script: make container-image/push VERSION=${TRAVIS_TAG} CONTAINER_IMAGE_VERSION=${TRAVIS_TAG}
+    on:
+      tags: true
 
 notifications:
   email:

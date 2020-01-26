@@ -1,11 +1,10 @@
-package hub_test
+package hub
 
 import (
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/volker-raschek/docker-hub-description-updater/pkg/hub"
 	"github.com/volker-raschek/docker-hub-description-updater/pkg/types"
 )
 
@@ -36,22 +35,20 @@ func TestPatchRepository(t *testing.T) {
 		Password: dockerHubPassword,
 	}
 
+	h := New(loginCredentials)
+
 	require := require.New(t)
-	token, err := hub.GetToken(loginCredentials)
-	require.NoError(err)
 
 	readme, err := Asset("README.md")
 	require.NoError(err)
 
-	currentRepository, err := hub.GetRepository(dockerHubNamespace, dockerHubRepository, token)
+	currentRepository, err := h.GetRepository(dockerHubNamespace, dockerHubRepository)
 	require.NoError(err)
 
 	expectedRepository := *currentRepository
 	expectedRepository.FullDescription = string(readme)
 
-	actualRepository, err := hub.PatchRepository(&expectedRepository, token)
+	actualRepository, err := h.PatchRepository(&expectedRepository)
 	require.NoError(err)
-
-	require.NotEqual(currentRepository, actualRepository, "The repository properties have remained the same even though an update was performed")
-	require.EqualValues(&expectedRepository, actualRepository, "The update was successfully")
+	require.EqualValues(&expectedRepository.FullDescription, actualRepository.FullDescription, "Full description not equal")
 }

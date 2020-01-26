@@ -2,7 +2,7 @@
 # If no version is specified as a parameter of make, the last git hash
 # value is taken.
 # VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
-VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
+VERSION?=0.0.0+hash.$(shell git rev-parse --short HEAD)
 
 # GO SETTINGS
 # Defines a proxy server to download dependent libraries. If no proxy is
@@ -88,14 +88,14 @@ bin/tmp/${EXECUTABLE}: bindata
 
 # BINDATA
 # ==============================================================================
-BINDATA_TARGETS:=\
-	pkg/hub/bindata_test.go
+BINDATA_TARGETS := \
+	pkg/hub/bindata.go
 
 PHONY+=bindata
 bindata: ${BINDATA_TARGETS}
 
-pkg/hub/bindata_test.go:
-	go-bindata -pkg hub_test -o ${@} README.md
+pkg/hub/bindata.go:
+	go-bindata -pkg hub -o ${@} README.md
 
 # TEST
 # ==============================================================================
