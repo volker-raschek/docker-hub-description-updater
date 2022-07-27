@@ -30,7 +30,7 @@ jobs:
     - name: clone
       uses: actions/checkout@v2
     - name: update apt cache
-      run: apt update --yes
+      run: apt update && apt install sudo
     - name: install sudo
       run: apt install --yes sudo
     - name: upgrade packages
