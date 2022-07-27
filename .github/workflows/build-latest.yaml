@@ -29,10 +29,10 @@ jobs:
     steps:
     - name: clone
       uses: actions/checkout@v2
-    - name: update apt cache
-      run: apt update && apt install sudo
     - name: install sudo
       run: apt install --yes sudo
+    - name: update apt cache
+      run: apt update && apt install sudo
     - name: upgrade packages
       run: apt upgrade --yes
     - name: install build-essential
