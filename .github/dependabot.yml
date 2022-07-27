@@ -1,0 +1,43 @@
+version: 2
+registries:
+  orbis-registry:
+    type: docker-registry
+    url: ${{ secrets.REGISTRY_PULL_HOST }}
+    username: ${{ secrets.REGISTRY_PULL_USER }}
+    password: ${{ secrets.REGISTRY_PULL_PASSWORD }}
+updates:
+
+# Maintain dependencies for docker
+- package-ecosystem: "docker"
+  directory: "/"
+  registries:
+  - orbis-registry
+  schedule:
+    interval: "daily"
+  assignees:
+  - "volker-raschek"
+  labels:
+  - "dependabot"
+  - "dependabot/docker"
+
+# Maintain dependencies for GitHub Actions
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "daily"
+  assignees:
+  - "volker-raschek"
+  labels:
+  - "dependabot"
+  - "dependabot/github-actions"
+
+# Maintain dependencies for golang
+- package-ecosystem: "gomod"
+  directory: "/"
+  schedule:
+    interval: "daily"
+  assignees:
+  - "volker-raschek"
+  labels:
+  - "dependabot"
+  - "dependabot/gomod"

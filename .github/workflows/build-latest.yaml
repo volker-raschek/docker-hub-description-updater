@@ -1,0 +1,41 @@
+name: build-latest
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types: [ opened, reopened ]
+
+env:
+  CONTAINER_RUNTIME: docker
+
+jobs:
+  cancel:
+    runs-on:
+    - ubuntu-22.04
+    steps:
+    - name: cancel previous runs
+      uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        all_but_latest: true
+        access_token: ${{ github.token }}
+
+  build-amd64-latest:
+    runs-on:
+    - ubuntu-22.04
+    needs:
+    - cancel
+    steps:
+    - name: clone
+      uses: actions/checkout@v2
+    - name: install build-essential
+      run:
+        apt update --yes && \
+        apt upgrade --yes && \
+        apt install --yes build-essential
+    - name: set up docker
+      uses: docker-practice/actions-setup-docker@master
+    - name: build
+      run: |
+        make container-image/build/amd64

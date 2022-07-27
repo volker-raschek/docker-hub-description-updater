@@ -4,14 +4,6 @@
 # VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
 VERSION?=0.0.0+hash.$(shell git rev-parse --short HEAD)
 
-# GOPROXY settings
-# If no GOPROXY environment variable available, the pre-defined GOPROXY from go
-# env to download and validate go modules is used. Exclude downloading and
-# validation of all private modules which are pre-defined in GOPRIVATE. If no
-# GOPRIVATE variable defined, the variable of go env is used.
-GOPROXY?=$(shell go env GOPROXY)
-GOPRIVATE?=$(shell go env GOPRIVATE)
-
 # EXECUTABLE
 # Executable binary which should be compiled for different architecures
 EXECUTABLE:=dhdu
@@ -153,8 +145,8 @@ container-image/build/amd64:
 		--build-arg BUILD_IMAGE=${BUILD_IMAGE_FULL} \
 		--build-arg EXECUTABLE=${EXECUTABLE} \
 		--build-arg EXECUTABLE_TARGET=bin/linux/amd64/${EXECUTABLE} \
-		--build-arg GOPROXY=${GOPROXY} \
-		--build-arg GOPRIVATE=${GOPRIVATE} \
+		--build-arg GOPROXY \
+		--build-arg GOPRIVATE \
 		--build-arg VERSION=${VERSION} \
 		--file Dockerfile \
 		--no-cache \
