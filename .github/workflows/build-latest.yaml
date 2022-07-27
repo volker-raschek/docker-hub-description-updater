@@ -29,13 +29,15 @@ jobs:
     steps:
     - name: clone
       uses: actions/checkout@v2
+    - name: update apt cache
+      run: apt update --yes
+    - name: install sudo
+      run: apt install --yes sudo
+    - name: upgrade packages
+      run: apt upgrade --yes
     - name: install build-essential
-      run:
-        sudo apt update --yes && \
-        sudo apt upgrade --yes && \
-        sudo apt install --yes build-essential
+      run: apt install --yes build-essential
     - name: set up docker
       uses: docker-practice/actions-setup-docker@master
     - name: build
-      run: |
-        make container-image/build/amd64
+      run: make container-image/build/amd64
