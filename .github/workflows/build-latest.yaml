@@ -29,14 +29,12 @@ jobs:
     steps:
     - name: clone
       uses: actions/checkout@v2
-    - name: install sudo
-      run: apt install --yes sudo
     - name: update apt cache
-      run: apt update && apt install sudo
+      run: sudo apt update --yes
     - name: upgrade packages
-      run: apt upgrade --yes
+      run: sudo apt upgrade --yes
     - name: install build-essential
-      run: apt install --yes build-essential
+      run: sudo apt install --yes build-essential
     - name: set up docker
       uses: docker-practice/actions-setup-docker@master
     - name: build
