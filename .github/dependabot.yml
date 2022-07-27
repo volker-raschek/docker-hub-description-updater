@@ -1,17 +1,9 @@
 version: 2
-registries:
-  orbis-registry:
-    type: docker-registry
-    url: ${{ secrets.REGISTRY_PULL_HOST }}
-    username: ${{ secrets.REGISTRY_PULL_USER }}
-    password: ${{ secrets.REGISTRY_PULL_PASSWORD }}
 updates:
 
 # Maintain dependencies for docker
 - package-ecosystem: "docker"
   directory: "/"
-  registries:
-  - orbis-registry
   schedule:
     interval: "daily"
   assignees:

@@ -31,9 +31,9 @@ jobs:
       uses: actions/checkout@v2
     - name: install build-essential
       run:
-        apt update --yes && \
-        apt upgrade --yes && \
-        apt install --yes build-essential
+        sudo apt update --yes && \
+        sudo apt upgrade --yes && \
+        sudo apt install --yes build-essential
     - name: set up docker
       uses: docker-practice/actions-setup-docker@master
     - name: build
