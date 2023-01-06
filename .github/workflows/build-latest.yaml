@@ -28,7 +28,7 @@ jobs:
     - cancel
     steps:
     - name: clone
-      uses: actions/checkout@v3.1.0
+      uses: actions/checkout@v3.3.0
     - name: update apt cache
       run: sudo apt update --yes
     - name: upgrade packages
