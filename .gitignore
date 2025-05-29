@@ -1,4 +1,3 @@
-/bin
-/dhd
-
-**/bindata*.go
+docker-hub-description-updater
+coverage.txt
+dist

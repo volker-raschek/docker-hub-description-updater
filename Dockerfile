@@ -1,23 +1,5 @@
-# ARGs
-# ==================================
-ARG BASE_IMAGE
-ARG BUILD_IMAGE
-ARG EXECUTABLE_TARGET
-ARG GOPROXY
-ARG GOPRIVATE
-ARG VERSION
+FROM scratch AS build
 
-# BUILD
-# ==============================================================================
-FROM ${BUILD_IMAGE} AS build-env
+COPY docker-hub-description-updater-* /usr/bin/docker-hub-description-updater
 
-ADD ./ /workspace
-
-RUN make clean ${EXECUTABLE_TARGET} GOPROXY=${GOPROXY}
-
-# TARGET
-# ==============================================================================
-FROM ${BASE_IMAGE}
-COPY --from=build-env /workspace/${EXECUTABLE_TARGET} /usr/bin/dhdu
-RUN chmod +x /usr/bin/dhdu
-ENTRYPOINT [ "/usr/bin/dhdu" ]
+ENTRYPOINT [ "/usr/bin/docker-hub-description-updater" ]
