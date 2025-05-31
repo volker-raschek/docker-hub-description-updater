@@ -15,5 +15,5 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_IO_USERNAME }}
         password: ${{ secrets.DOCKER_IO_PASSWORD }}
-        repository: volkerraschek/docker-hub-description-updater
+        repository: volkerraschek/dhdu
         readme-filepath: README.md
