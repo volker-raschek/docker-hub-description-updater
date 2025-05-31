@@ -1,195 +1,114 @@
-# VERSION
-# If no version is specified as a parameter of make, the last git hash
-# value is taken.
-# VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
-VERSION?=0.0.0+hash.$(shell git rev-parse --short HEAD)
+EXECUTABLE=docker-hub-description-updater
+VERSION?=$(shell git describe --abbrev=0)+hash.$(shell git rev-parse --short HEAD)
 
-# EXECUTABLE
-# Executable binary which should be compiled for different architecures
-EXECUTABLE:=dhdu
-
-# LINUX_EXECUTABLES AND TARGETS
-LINUX_EXECUTABLES:=\
-	linux/amd64/${EXECUTABLE} \
-	linux/arm/5/${EXECUTABLE} \
-	linux/arm/7/${EXECUTABLE}
-
-LINUX_EXECUTABLE_TARGETS:=${LINUX_EXECUTABLES:%=bin/%}
-
-# UNIX_EXECUTABLES AND TARGETS
-# Define all executables for different architectures and operation systems
-UNIX_EXECUTABLES:=\
-	${LINUX_EXECUTABLES}
-
-UNIX_EXECUTABLE_TARGETS:=\
-	${LINUX_EXECUTABLE_TARGETS}
-
-# EXECUTABLE_TARGETS
-# Include all UNIX and Windows targets.
-EXECUTABLES:=\
-	${UNIX_EXECUTABLES}
-
-EXECUTABLE_TARGETS:=\
-	${UNIX_EXECUTABLE_TARGETS}
+# Destination directory and prefix to place the compiled binaries, documentaions
+# and other files.
+DESTDIR?=
+PREFIX?=/usr/local
 
 # CONTAINER_RUNTIME
 # The CONTAINER_RUNTIME variable will be used to specified the path to a
-# container runtime. This is needed to start and run a container images.
-CONTAINER_RUNTIME?=$(shell which docker)
+# container runtime. This is needed to start and run a container image.
+CONTAINER_RUNTIME?=$(shell which podman)
 
-# BUILD_IMAGE
-# Definition of the container build image, in which the Binary are compiled from
-# source code
-BUILD_IMAGE_REGISTRY:=docker.io
-BUILD_IMAGE_NAMESPACE:=volkerraschek
-BUILD_IMAGE_NAME:=build-image
-BUILD_IMAGE_VERSION:=latest
-BUILD_IMAGE_FULL=${BUILD_IMAGE_REGISTRY}/${BUILD_IMAGE_NAMESPACE}/${BUILD_IMAGE_NAME}:${BUILD_IMAGE_VERSION:v%=%}
-BUILD_IMAGE_SHORT=${BUILD_IMAGE_NAMESPACE}/${BUILD_IMAGE_NAME}:${BUILD_IMAGE_VERSION:v%=%}
+# DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_NAME
+# Defines the name of the new container to be built using several variables.
+DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_NAME:=git.cryptic.systems
+DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_USER:=volker.raschek
 
-# BASE_IMAGE
-# Definition of the base container image
-BASE_IMAGE_REGISTRY:=docker.io
-BASE_IMAGE_NAMESPACE:=library
-BASE_IMAGE_NAME:=alpine
-BASE_IMAGE_VERSION:=3.11.2
-BASE_IMAGE_FULL=${BASE_IMAGE_REGISTRY}/${BASE_IMAGE_NAMESPACE}/${BASE_IMAGE_NAME}:${BASE_IMAGE_VERSION:v%=%}
-BASE_IMAGE_SHORT=${BASE_IMAGE_NAMESPACE}/${BASE_IMAGE_NAME}:${BASE_IMAGE_VERSION:v%=%}
+DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_NAMESPACE?=${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_USER}
+DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_NAME:=${EXECUTABLE}
+DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_VERSION?=latest
+DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_FULLY_QUALIFIED=${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_NAME}/${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_NAMESPACE}/${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_NAME}:${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_VERSION}
 
-# CONTAINER_IMAGE
-# Definition of the container image
-CONTAINER_IMAGE_REGISTRY:=docker.io
-CONTAINER_IMAGE_NAMESPACE:=volkerraschek
-CONTAINER_IMAGE_NAME:=${EXECUTABLE}
-CONTAINER_IMAGE_VERSION:=latest
-CONTAINER_IMAGE_FULL=${CONTAINER_IMAGE_REGISTRY}/${CONTAINER_IMAGE_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION:v%=%}
-CONTAINER_IMAGE_SHORT=${CONTAINER_IMAGE_NAMESPACE}/${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_VERSION:v%=%}
-
-README_FILE:=README.md
-
-# BINARIES
+# BIN
 # ==============================================================================
-PHONY:=all
-
-${EXECUTABLE}: bin/tmp/${EXECUTABLE}
-
-all: ${EXECUTABLE_TARGETS}
-
-bin/linux/amd64/${EXECUTABLE}: bindata
+docker-hub-description-updater:
 	CGO_ENABLED=0 \
-  GOOS=linux \
-  GOARCH=amd64 \
-  GOPROXY=${GOPROXY} \
-  GOPRIVATE=${GOPRIVATE} \
-	go build -ldflags "-X main.version=${VERSION}" -o ${@}
-
-bin/linux/arm/5/${EXECUTABLE}: bindata
-	CGO_ENABLED=0 \
-  GOOS=linux \
-  GOARCH=arm \
-  GOARM=5 \
-  GOPROXY=${GOPROXY} \
-  GOPRIVATE=${GOPRIVATE} \
-	go build -ldflags "-X main.version=${VERSION}" -o ${@}
-
-bin/linux/arm/7/${EXECUTABLE}: bindata
-	CGO_ENABLED=0 \
-  GOOS=linux \
-  GOARCH=arm \
-  GOARM=5 \
-  GOPROXY=${GOPROXY} \
-  GOPRIVATE=${GOPRIVATE} \
-	go build -ldflags "-X main.version=${VERSION}" -o ${@}
-
-bin/tmp/${EXECUTABLE}: bindata
-	GOPROXY=${GOPROXY} \
-	GOPRIVATE=${GOPRIVATE} \
-	go build -ldflags "-X main.version=${VERSION}" -o ${@}
-
-# BINDATA
-# ==============================================================================
-BINDATA_TARGETS := \
-	pkg/hub/bindata.go
-
-PHONY+=bindata
-bindata: ${BINDATA_TARGETS}
-
-pkg/hub/bindata.go:
-	go-bindata -pkg hub -o ${@} README.md
-
-# TEST
-# ==============================================================================
-PHONY+=test
-test: clean bin/tmp/${EXECUTABLE}
-	REGISTRY_USER=${REGISTRY_USER} \
-	REGISTRY_PASSWORD=${REGISTRY_PASSWORD} \
-	REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE} \
-	CONTAINER_IMAGE_NAME=${CONTAINER_IMAGE_NAME} \
-	README_FILE=${README_FILE} \
-		go test -v ./pkg/...
+	GOPROXY=$(shell go env GOPROXY) \
+		go build -ldflags "-X 'main.version=${VERSION}'" -o ${@} main.go
 
 # CLEAN
 # ==============================================================================
 PHONY+=clean
 clean:
-	rm --force ${EXECUTABLE} || true
-	rm --force --recursive bin || true
-	rm --force --recursive ${BINDATA_TARGETS} || true
+	rm --force --recursive docker-hub-description-updater
 
-# CONTAINER IMAGE STEPS
+# TESTS
 # ==============================================================================
-PHONY+=container-image/build/amd64
-container-image/build/amd64:
+PHONY+=test/unit
+test/unit:
+	CGO_ENABLED=0 \
+	GOPROXY=$(shell go env GOPROXY) \
+		go test -v -p 1 -coverprofile=coverage.txt -covermode=count -timeout 1200s ./pkg/...
+
+PHONY+=test/integration
+test/integration:
+	CGO_ENABLED=0 \
+	GOPROXY=$(shell go env GOPROXY) \
+		go test -v -p 1 -count=1 -timeout 1200s ./it/...
+
+PHONY+=test/coverage
+test/coverage: test/unit
+	CGO_ENABLED=0 \
+	GOPROXY=$(shell go env GOPROXY) \
+		go tool cover -html=coverage.txt
+
+# GOLANGCI-LINT
+# ==============================================================================
+PHONY+=golangci-lint
+golangci-lint:
+	golangci-lint run --concurrency=$(shell nproc)
+
+# INSTALL
+# ==============================================================================
+PHONY+=uninstall
+install: docker-hub-description-updater
+	install --directory ${DESTDIR}/etc/bash_completion.d
+	./docker-hub-description-updater completion bash > ${DESTDIR}/etc/bash_completion.d/${EXECUTABLE}
+
+	install --directory ${DESTDIR}${PREFIX}/bin
+	install --mode 0755 ${EXECUTABLE} ${DESTDIR}${PREFIX}/bin/${EXECUTABLE}
+
+	install --directory ${DESTDIR}${PREFIX}/share/licenses/${EXECUTABLE}
+	install --mode 0644 LICENSE ${DESTDIR}${PREFIX}/share/licenses/${EXECUTABLE}/LICENSE
+
+# UNINSTALL
+# ==============================================================================
+PHONY+=uninstall
+uninstall:
+	-rm --force --recursive \
+		${DESTDIR}/etc/bash_completion.d/${EXECUTABLE} \
+		${DESTDIR}${PREFIX}/bin/${EXECUTABLE} \
+		${DESTDIR}${PREFIX}/share/licenses/${EXECUTABLE}
+
+# BUILD CONTAINER IMAGE
+# ==============================================================================
+PHONY+=container-image/build
+container-image/build:
 	${CONTAINER_RUNTIME} build \
-		--build-arg BASE_IMAGE=${BASE_IMAGE_FULL} \
-		--build-arg BUILD_IMAGE=${BUILD_IMAGE_FULL} \
-		--build-arg EXECUTABLE=${EXECUTABLE} \
-		--build-arg EXECUTABLE_TARGET=bin/linux/amd64/${EXECUTABLE} \
-		--build-arg GOPROXY \
-		--build-arg GOPRIVATE \
 		--build-arg VERSION=${VERSION} \
 		--file Dockerfile \
 		--no-cache \
-		--tag ${CONTAINER_IMAGE_FULL} \
-		--tag ${CONTAINER_IMAGE_SHORT} \
+		--pull \
+		--tag ${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_FULLY_QUALIFIED} \
 		.
 
-PHONY+=container-image/push/amd64
-container-image/push/amd64: container-image/build/amd64
-	${CONTAINER_RUNTIME} login ${CONTAINER_IMAGE_REGISTRY} \
-		--username ${CONTAINER_IMAGE_REGISTRY_USER} \
-		--password ${CONTAINER_IMAGE_REGISTRY_PASSWORD}
-	${CONTAINER_RUNTIME} push ${CONTAINER_IMAGE_FULL}
-
-# CONTAINER STEPS - BINARY
+# DELETE CONTAINER IMAGE
 # ==============================================================================
-PHONY+=container-run/all
-container-run/all:
-	$(MAKE) container-run COMMAND=${@:container-run/%=%}
+PHONY:=container-image/delete
+container-image/delete:
+	- ${CONTAINER_RUNTIME} image rm ${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_FULLY_QUALIFIED}
 
-PHONY+=${UNIX_EXECUTABLE_TARGETS:%=container-run/%}
-${UNIX_EXECUTABLE_TARGETS:%=container-run/%}:
-	$(MAKE) container-run COMMAND=${@:container-run/%=%}
-
-# CONTAINER STEPS - CLEAN
+# PUSH CONTAINER IMAGE
 # ==============================================================================
-PHONY+=container-run/clean
-container-run/clean:
-	$(MAKE) container-run COMMAND=${@:container-run/%=%}
-
-# GENERAL CONTAINER COMMAND
-# ==============================================================================
-PHONY+=container-run
-container-run:
-	${CONTAINER_RUNTIME} run \
-		--rm \
-		--volume ${PWD}:/workspace \
-		${BUILD_IMAGE_FULL} \
-			make ${COMMAND} \
-				VERSION=${VERSION} \
-				GOPROXY=${GOPROXY} \
-				GOPRIVATE=${GOPRIVATE} \
+PHONY+=container-image/push
+container-image/push:
+	echo ${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_PASSWORD} | ${CONTAINER_RUNTIME} login ${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_NAME} --username ${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_REGISTRY_USER} --password-stdin
+	${CONTAINER_RUNTIME} push ${DOCKERHUB_DESCRIPTION_UPDATER_IMAGE_FULLY_QUALIFIED}
 
 # PHONY
 # ==============================================================================
+# Declare the contents of the PHONY variable as phony.  We keep that information
+# in a variable so we can use it in if_changed.
 .PHONY: ${PHONY}

@@ -56,7 +56,7 @@ func (h *Hub) GetRepository(namespace string, name string) (*types.Repository, e
 	if err != nil {
 		return nil, fmt.Errorf("%v: %v", errorFailedToSendRequest, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
@@ -89,7 +89,7 @@ func (h *Hub) getToken() (*types.Token, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
@@ -144,7 +144,7 @@ func (h *Hub) PatchRepository(repository *types.Repository) (*types.Repository, 
 	if err != nil {
 		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)

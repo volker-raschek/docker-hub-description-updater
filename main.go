@@ -9,5 +9,5 @@ var (
 )
 
 func main() {
-	cmd.Execute(version)
+	_ = cmd.Execute(version)
 }
