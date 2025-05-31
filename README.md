@@ -1,8 +1,5 @@
 # docker hub description updater
 
-[![Build Status](https://travis-ci.com/volker-raschek/docker-hub-description-updater.svg?branch=master)](https://travis-ci.com/volker-raschek/docker-hub-description-updater)
-[![Go Report Card](https://goreportcard.com/badge/github.com/volker-raschek/docker-hub-description-updater)](https://goreportcard.com/report/github.com/volker-raschek/docker-hub-description-updater)
-[![GoDoc Reference](https://godoc.org/github.com/volker-raschek/docker-hub-description-updater?status.svg)](http://godoc.org/github.com/volker-raschek/docker-hub-description-updater)
 [![Docker Pulls](https://img.shields.io/docker/pulls/volkerraschek/dhdu)](https://hub.docker.com/r/volkerraschek/dhdu)
 
 By specifying the login data for [hub.docker.com](https://hub.docker.com) you
