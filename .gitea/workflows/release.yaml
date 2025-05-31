@@ -48,5 +48,5 @@ jobs:
           --dest-username ${{ secrets.DOCKER_IO_USERNAME }} \
           --src-password ${{ secrets.GIT_CRYPTIC_SYSTEMS_PACKAGE_REGISTRY_TOKEN }} \
           --src-username volker.raschek \
-            docker://git.cryptic.systems/volker.raschek/dcmerge:${TAG} \
-            docker://docker.io/volkerraschek/dcmerge:${TAG}
+            docker://git.cryptic.systems/volker.raschek/docker-hub-description-updater:${TAG} \
+            docker://docker.io/volkerraschek/docker-hub-description-updater:${TAG}
