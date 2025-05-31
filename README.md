@@ -7,8 +7,6 @@ can update the short and long description of a docker repository.
 
 ## Usage
 
-Test
-
 The examples below describe two ways to update the full description of the
 docker hub repository. First by the binary and second by a container based way.
 
