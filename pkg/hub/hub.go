@@ -25,22 +25,22 @@ type Hub struct {
 func (h *Hub) GetRepository(namespace string, name string) (*types.Repository, error) {
 
 	if len(namespace) <= 0 {
-		return nil, errorNoNamespaceDefined
+		return nil, errNoNamespaceDefined
 	}
 
 	if len(name) <= 0 {
-		return nil, errorNoRepositoryDefined
+		return nil, errNoRepositoryDefined
 	}
 
 	rawURL := fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, namespace, name)
 	url, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToParseURL, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToParseURL, err)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToCreateRequest, err)
 	}
 
 	if h.token == nil {
@@ -54,18 +54,18 @@ func (h *Hub) GetRepository(namespace string, name string) (*types.Repository, e
 
 	resp, err := h.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToSendRequest, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToSendRequest, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
+		return nil, fmt.Errorf("%v: expect %v, received %v", errUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
 	}
 
 	repository := new(types.Repository)
 	jsonDecoder := json.NewDecoder(resp.Body)
 	if err := jsonDecoder.Decode(repository); err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToParseJSON, err)
 	}
 
 	return repository, nil
@@ -75,30 +75,30 @@ func (h *Hub) getToken() (*types.Token, error) {
 	loginBuffer := new(bytes.Buffer)
 	jsonEncoder := json.NewEncoder(loginBuffer)
 	if err := jsonEncoder.Encode(h.credentials); err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToParseJSON, err)
 	}
 
 	rawURL := fmt.Sprintf("%v/users/login/", dockerHubAPI)
 	req, err := http.NewRequest(http.MethodPost, rawURL, loginBuffer)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToCreateRequest, err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := h.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToCreateRequest, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
+		return nil, fmt.Errorf("%v: expect %v, received %v", errUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
 	}
 
 	token := new(types.Token)
 	jsonDecoder := json.NewDecoder(resp.Body)
 	if err := jsonDecoder.Decode(token); err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToParseJSON, err)
 	}
 
 	return token, nil
@@ -108,11 +108,11 @@ func (h *Hub) getToken() (*types.Token, error) {
 func (h *Hub) PatchRepository(repository *types.Repository) (*types.Repository, error) {
 
 	if len(repository.Namespcace) <= 0 {
-		return nil, errorNoNamespaceDefined
+		return nil, errNoNamespaceDefined
 	}
 
 	if len(repository.Name) <= 0 {
-		return nil, errorNoRepositoryDefined
+		return nil, errNoRepositoryDefined
 	}
 
 	if h.token == nil {
@@ -127,7 +127,7 @@ func (h *Hub) PatchRepository(repository *types.Repository) (*types.Repository, 
 	rawURL := fmt.Sprintf("%v/repositories/%v/%v", dockerHubAPI, repository.Namespcace, repository.Name)
 	patchURL, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToParseURL, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToParseURL, err)
 	}
 
 	data := &url.Values{}
@@ -136,24 +136,24 @@ func (h *Hub) PatchRepository(repository *types.Repository) (*types.Repository, 
 
 	req, err := http.NewRequest(http.MethodPatch, patchURL.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToCreateRequest, err)
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("JWT %v", h.token.Token))
 
 	resp, err := h.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToCreateRequest, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToCreateRequest, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%v: expect %v, received %v", errorUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
+		return nil, fmt.Errorf("%v: expect %v, received %v", errUnexpectedHTTPStatuscode, http.StatusOK, resp.StatusCode)
 	}
 
 	patchedRepository := new(types.Repository)
 	jsonDecoder := json.NewDecoder(resp.Body)
 	if err := jsonDecoder.Decode(h.token); err != nil {
-		return nil, fmt.Errorf("%v: %v", errorFailedToParseJSON, err)
+		return nil, fmt.Errorf("%v: %v", errFailedToParseJSON, err)
 	}
 
 	return patchedRepository, nil

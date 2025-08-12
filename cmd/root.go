@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -59,7 +58,8 @@ func runE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("can not find file: %v", file)
 	}
 
-	f, err := ioutil.ReadFile(file)
+	// #nosec G304
+	f, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("can not read file %v: %v", file, err)
 	}
